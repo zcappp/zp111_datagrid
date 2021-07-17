@@ -1,0 +1,115 @@
+module.exports=`
+.zp111 * {
+  box-sizing: border-box;
+}
+.zp111 svg {
+    cursor: pointer;
+    fill: rgb(100, 100, 255);
+}
+
+.zp111 svg:hover {
+    fill: rgb(9, 187, 7);
+}
+
+.zp111 .YMD,
+.zp111 .TYPES,
+.zp111 .subtype {
+    white-space: nowrap;
+    margin: 9px;
+    overflow: auto;
+    padding: 0;
+}
+
+.zp111 .TYPES .disable,
+.zp111 .subtype .disable {
+    color: rgb(201, 201, 201);
+    cursor: not-allowed;
+}
+
+.zp111 .ztable {
+    position: relative;
+    width: calc(100% - 2px);
+    max-width: calc(100% - 2px);
+    margin: 21px 1px;
+}
+
+.zp111 .slot svg {
+    position: absolute;
+    width: 1.7em;
+    left: 5px;
+    transform: rotate(180deg);
+}
+
+.zp111 .slot div {
+    margin-left: 40px;
+    line-height: 1.7;
+    overflow: auto;
+}
+
+.zp111 .slot span {
+    margin: 9px;
+}
+
+.zp111 .slot span.cur {
+    font-weight: bold;
+    color: red;
+}
+
+.zp111 .页面流量 .more,
+.zp111 .各省列表 .more {
+    background: rgb(249, 249, 249);
+    color: grey;
+}
+
+.zp111 .pop .页面PV {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    background: white;
+    overflow: auto;
+}
+
+.zp111 .pop .页面PV svg {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 99;
+}
+
+.zp111 .pop .页面PV h3 {
+    text-align: center;
+    margin-top: 35px;
+}
+
+.zp111 .zsvg_lbs {
+    position: absolute;
+    top: 8px;
+    left: 36px;
+}
+
+.zp111 table td:not(:first-child),
+.zp111 table th:not(:first-child) {
+    text-align: right;
+    width: 30px;
+}
+
+.zp111 table .zellipsis {
+    max-width: 90px;
+}
+
+.zp111 .zsvg_plus,
+.zp111 .zsvg_minus {
+    padding: 3px;
+}
+
+.zp111 table th {
+    font-weight: normal;
+}
+
+.zp111 caption {
+    text-align: left;
+}
+
+`
