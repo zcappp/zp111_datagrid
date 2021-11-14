@@ -15,9 +15,9 @@ module.exports=`
 .zp111 .TYPES,
 .zp111 .subtype {
     white-space: nowrap;
-    margin: 9px;
+    margin: 0;
     overflow: auto;
-    padding: 0;
+    padding: 9px;
 }
 
 .zp111 .TYPES .disable,
