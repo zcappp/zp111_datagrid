@@ -3,7 +3,7 @@ import css from "../css/zp111_流量统计.css"
 
 const YMD = ["小时", "日", "月", "年"]
 const TAB = {
-    概要: ["DB流量", "访问量", "浏览量", "API调用量", "CDN流量", "短信发送量", "DB容量"],
+    概要: ["访问量", "浏览量", "API调用量", "CDN流量", "OSS容量", "DB流量", "DB容量", "短信发送量"],
     详细: ["入口页", "受访页", "API", "IP", "短信"],
     地域分布: ["各地占比", "中国地图"],
     页面流量: ["页面流量"],
@@ -16,7 +16,7 @@ function onInit(ref) {
     exc = ref.exc
     rd = ref.render
     id = ref.id
-    exc('load("http://cdn.highcharts.com.cn/highcharts/highcharts.js")', null, () => {
+    exc('load("https://cdn.highcharts.com.cn/highcharts/highcharts.js")', null, () => {
         Highcharts.setOptions({ global: { useUTC: false } })
         $("#" + id + " .YMD").children[0].click()
         $("#" + id + " .TYPES").children[1].click()
@@ -38,7 +38,7 @@ function render() {
             )}</div>
         </div>}
         {!!type && <ul className="subtype" key={type + subtype}>{TAB[type].map((a, i) =>
-            <li onClick={() => selectSubType(a)} className={"ztab " + (ymd === "日" && (a === "CDN流量" || a === "DB容量") ? " disable" : (subtype === a ? "zcur" : ""))} key={a}>{a}</li>
+            <li onClick={() => selectSubType(a)} className={"ztab " + (ymd === "日" && (a === "CDN流量" || a === "OSS容量" || a === "DB容量") ? " disable" : (subtype === a ? "zcur" : ""))} key={a}>{a}</li>
         )}</ul>}
         <div className="details" key={subtype}>{!!subtype && O && details[subtype]()}</div>
         <div className="pop">{!!pop && renderPop()}</div>
@@ -119,9 +119,6 @@ function prevSlot() { // 时间段
 
 const details = {
     // 概要
-    DB流量: () => {
-        return <div className="DB流量"/>
-    },
     访问量: () => {
         return <React.Fragment><div className="访问量"/><div className="访问量pie"/></React.Fragment>
     },
@@ -134,11 +131,17 @@ const details = {
     CDN流量: () => {
         return <div className="CDN流量"/>
     },
-    短信发送量: () => {
-        return <div className="短信发送量"/>
+    OSS容量: () => {
+        return <div className="OSS容量"/>
+    },
+    DB流量: () => {
+        return <div className="DB流量"/>
     },
     DB容量: () => {
         return <div className="DB容量"/>
+    },
+    短信发送量: () => {
+        return <div className="短信发送量"/>
     },
     // 详细
     入口页: () => {
@@ -302,12 +305,12 @@ const details = {
 
 const loadData = {
     概要: cb => {
-        O = { "dat": [], "vv": [], "pv": [], "vvm": [], "vvd": [], "vvb": [], "pvm": [], "pvd": [], "api": [], "cdn": [], "sms": [], "db": [] }
+        O = { "dat": [], "vv": [], "pv": [], "vvm": [], "vvd": [], "vvb": [], "pvm": [], "pvd": [], "api": [], "cdn": [], "sms": [], "db": [], "oss": [] }
         calls(slot.sel, (slot, next) => {
             exc(`$traffic.summary("${slot}")`, null, R => {
                 const 前 = slot.substr(0, 4) + "/" + (ymd === "日" ? slot.substr(4, 2) + "/" + slot.substr(6, 2) + " " : (ymd === "月" ? slot.substr(4, 2) + "/" : ""))
                 const 后 = (ymd === "日" ? ":00" : (ymd === "月" ? "" : "/01"))
-                const summary = ["dat", "vvm", "vvd", "vvb", "pvm", "pvd", "api", "cdn", "sms", "db"]
+                const summary = ["dat", "vvm", "vvd", "vvb", "pvm", "pvd", "api", "cdn", "sms", "db", "oss"]
                 Object.keys(R).forEach(a => {
                     summary.forEach(b => {
                         O[b].push([new Date(前 + a + 后).getTime(), R[a][b] || 0])
@@ -456,13 +459,6 @@ const loadData = {
 }
 
 const transformData = {
-    DB流量: () => {
-        O.dat.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
-        chart.title = { text: "DB流量 (" + (O.dat.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "M)" }
-        chart.series.push({ type: "area", name: "DB流量", data: O.dat })
-        Highcharts.chart($("#" + id + " .DB流量"), chart)
-    },
     访问量: () => {
         O.vvm.forEach((a, i) => {
             O.vv.push([O.vvm[i][0], O.vvm[i][1] + O.vvd[i][1] + O.vvb[i][1]])
@@ -510,23 +506,37 @@ const transformData = {
     CDN流量: () => {
         O.cdn.sort((a, b) => a[0] - b[0])
         let chart = JSON.parse(JSON.stringify(chartOption))
-        chart.title = { text: "CDN流量 (" + (O.cdn.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "G)" }
-        chart.series.push({ type: "area", name: "CDN流量", data: O.cdn })
+        chart.title = { text: "CDN流量 (" + (O.cdn.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "GB)" }
+        chart.series.push({ type: "area", name: "CDN流量(MB)", data: O.cdn })
         Highcharts.chart($("#" + id + " .CDN流量"), chart)
     },
-    短信发送量: () => {
-        O.sms.sort((a, b) => a[0] - b[0])
+    OSS容量: () => {
+        O.oss.sort((a, b) => a[0] - b[0])
         let chart = JSON.parse(JSON.stringify(chartOption))
-        chart.title = { text: "短信发送量 (" + O.sms.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + ")" }
-        chart.series.push({ type: "area", name: "短信发送量", data: O.sms })
-        Highcharts.chart($("#" + id + " .短信发送量"), chart)
+        chart.title = { text: "OSS容量 (" + (O.oss.reduce((acc, x) => acc + x[1], 0) / 1000 / O.oss.filter(a => a[1]).length).toLocaleString("en-US") + "GB)" }
+        chart.series.push({ type: "area", name: "OSS容量(MB)", data: O.oss })
+        Highcharts.chart($("#" + id + " .OSS容量"), chart)
+    },
+    DB流量: () => {
+        O.dat.sort((a, b) => a[0] - b[0])
+        let chart = JSON.parse(JSON.stringify(chartOption))
+        chart.title = { text: "DB流量 (" + (O.dat.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "MB)" }
+        chart.series.push({ type: "area", name: "DB流量(KB)", data: O.dat })
+        Highcharts.chart($("#" + id + " .DB流量"), chart)
     },
     DB容量: () => {
         O.db.sort((a, b) => a[0] - b[0])
         let chart = JSON.parse(JSON.stringify(chartOption))
-        chart.title = { text: "DB容量 (" + (O.db.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "M)" }
-        chart.series.push({ type: "area", name: "DB容量", data: O.db })
+        chart.title = { text: "DB容量 (" + (O.db.reduce((acc, x) => acc + x[1], 0) / O.db.filter(a => a[1]).length / 1000).toLocaleString("en-US") + "MB)" }
+        chart.series.push({ type: "area", name: "DB容量(KB)", data: O.db })
         Highcharts.chart($("#" + id + " .DB容量"), chart)
+    },
+    短信发送量: () => {
+        O.sms.sort((a, b) => a[0] - b[0])
+        let chart = JSON.parse(JSON.stringify(chartOption))
+        chart.title = { text: "短信发送量 (" + O.sms.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + "条)" }
+        chart.series.push({ type: "area", name: "短信发送量(条)", data: O.sms })
+        Highcharts.chart($("#" + id + " .短信发送量"), chart)
     },
     //详细
     入口页: () => {
@@ -688,7 +698,7 @@ const transformData = {
         O.页面数 = O.页面数 + 其他.cnt
         O.访问量 = O.页面.reduce((acc, x) => acc + x[1], 0)
 
-        exc('load("http://code.highcharts.com.cn/highcharts/modules/drilldown.js")', null, () => {
+        exc('load("https://code.highcharts.com.cn/highcharts/modules/drilldown.js")', null, () => {
             let data = []
             let drilldown = []
             O.页面.forEach(a => {
@@ -706,7 +716,7 @@ const transformData = {
         Object.keys(O.o).forEach(a => O.来源.push([a.replaceAll("_", "."), O.o[a]]))
         O.来源.sort((a, b) => b[1] - a[1])
         O.访问量 = O.来源.reduce((acc, x) => acc + x[1], 0)
-        exc('load("http://code.highcharts.com.cn/highcharts/modules/drilldown.js")', null, () => {
+        exc('load("https://code.highcharts.com.cn/highcharts/modules/drilldown.js")', null, () => {
             let data = []
             O.来源.forEach(a => {
                 data.push({ name: a[0], y: a[1] })
