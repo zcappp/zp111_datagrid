@@ -419,8 +419,10 @@ const loadData = {
     },
     中国地图: cb => {
         loadData.各地占比(() => {
-            transformData.各地占比()
-            exc('load(["http://cdn.highcharts.com.cn/highmaps/modules/map.js", "http://code.highcharts.com.cn/highcharts/modules/drilldown.js","https://data.jianshukeji.com/geochina/china.js"])', null, cb)
+            Object.keys(O.各省).forEach(a => O.全国.push([a, O.各省[a]]))
+            O.全国.sort((a, b) => b[1] - a[1])
+            O.全国总量 = O.全国.reduce((acc, x) => acc + x[1], 0)
+            exc('load(["https://cdn.highcharts.com.cn/highmaps/modules/map.js", "https://code.highcharts.com.cn/highcharts/modules/drilldown.js","https://data.jianshukeji.com/geochina/china.js"])', null, cb)
         })
     },
     //
