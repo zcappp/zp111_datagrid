@@ -16,7 +16,7 @@ function onInit(ref) {
     exc = ref.exc
     rd = ref.render
     id = ref.id
-    exc('load("https://cdn.highcharts.com.cn/highcharts/highcharts.js")', null, () => {
+    exc('load("https://code.hcharts.cn/10.3.2/highcharts.js")', null, () => {
         Highcharts.setOptions({ global: { useUTC: false } })
         $("#" + id + " .YMD").children[0].click()
         $("#" + id + " .TYPES").children[1].click()
@@ -467,9 +467,9 @@ const transformData = {
         })
         O.vv.sort((a, b) => a[0] - b[0])
         const total = O.vv.reduce((acc, x) => acc + x[1], 0)
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "访问量 (" + total.toLocaleString("en-US") + ")" }
-        chart.series.push({ type: "area", name: "访问量", data: O.vv })
+        chart.series = [{ type: "area", name: "访问量", data: O.vv }]
         Highcharts.chart($("#" + id + " .访问量"), chart)
         Highcharts.chart($("#" + id + " .访问量pie"), {
             chart: { type: "pie" },
@@ -493,51 +493,51 @@ const transformData = {
             O.pv.push([O.vv[i][0], O.pvm[i][1] + O.pvd[i][1] + O.vv[i][1]])
         })
         O.pv.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "浏览量 (" + O.pv.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + ")" }
-        chart.series.push({ type: "area", name: "浏览量", data: O.pv })
+        chart.series = [{ type: "area", name: "浏览量", data: O.pv }]
         Highcharts.chart($("#" + id + " .浏览量"), chart)
     },
     API调用量: () => {
         O.api.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "API调用量 (" + O.api.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + ")" }
-        chart.series.push({ type: "area", name: "API调用量", data: O.api })
+        chart.series = [{ type: "area", name: "API调用量", data: O.api }]
         Highcharts.chart($("#" + id + " .API调用量"), chart)
     },
     CDN流量: () => {
         O.cdn.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "CDN流量 (" + (O.cdn.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "GB)" }
-        chart.series.push({ type: "area", name: "CDN流量(MB)", data: O.cdn })
+        chart.series = [{ type: "area", name: "CDN流量(MB)", data: O.cdn }]
         Highcharts.chart($("#" + id + " .CDN流量"), chart)
     },
     OSS容量: () => {
         O.oss.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "OSS容量 (" + (O.oss.reduce((acc, x) => acc + x[1], 0) / 1000 / O.oss.filter(a => a[1]).length).toLocaleString("en-US") + "GB)" }
-        chart.series.push({ type: "area", name: "OSS容量(MB)", data: O.oss })
+        chart.series = [{ type: "area", name: "OSS容量(MB)", data: O.oss }]
         Highcharts.chart($("#" + id + " .OSS容量"), chart)
     },
     DB流量: () => {
         O.dat.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "DB流量 (" + (O.dat.reduce((acc, x) => acc + x[1], 0) / 1000).toLocaleString("en-US") + "MB)" }
-        chart.series.push({ type: "area", name: "DB流量(KB)", data: O.dat })
+        chart.series = [{ type: "area", name: "DB流量(KB)", data: O.dat }]
         Highcharts.chart($("#" + id + " .DB流量"), chart)
     },
     DB容量: () => {
         O.db.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "DB容量 (" + (O.db.reduce((acc, x) => acc + x[1], 0) / O.db.filter(a => a[1]).length / 1000).toLocaleString("en-US") + "MB)" }
-        chart.series.push({ type: "area", name: "DB容量(KB)", data: O.db })
+        chart.series = [{ type: "area", name: "DB容量(KB)", data: O.db }]
         Highcharts.chart($("#" + id + " .DB容量"), chart)
     },
     短信发送量: () => {
         O.sms.sort((a, b) => a[0] - b[0])
-        let chart = JSON.parse(JSON.stringify(chartOption))
+        let chart = clone(Option)
         chart.title = { text: "短信发送量 (" + O.sms.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + "条)" }
-        chart.series.push({ type: "area", name: "短信发送量(条)", data: O.sms })
+        chart.series = [{ type: "area", name: "短信发送量(条)", data: O.sms }]
         Highcharts.chart($("#" + id + " .短信发送量"), chart)
     },
     //详细
@@ -743,7 +743,7 @@ function popPagePV(name) {
                 })
             })
             data.sort((a, b) => b[0] - a[0])
-            let chart = JSON.parse(JSON.stringify(chartOption))
+            let chart = clone(Option)
             chart.title = { text: "最近3天浏览量 (" + data.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + ")" }
             chart.series = [{ type: "area", name: "浏览量", data }]
             Highcharts.chart($("#" + id + " .页面PV .日"), chart)
@@ -756,7 +756,7 @@ function popPagePV(name) {
                 })
             })
             data.sort((a, b) => b[0] - a[0])
-            chart = JSON.parse(JSON.stringify(chartOption))
+            chart = clone(Option)
             chart.title = { text: "最近3个月浏览量 (" + data.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + ")" }
             chart.series = [{ type: "area", name: "浏览量", data }]
             Highcharts.chart($("#" + id + " .页面PV .月"), chart)
@@ -768,12 +768,16 @@ function popPagePV(name) {
                 })
             })
             data.sort((a, b) => b[0] - a[0])
-            chart = JSON.parse(JSON.stringify(chartOption))
+            chart = clone(Option)
             chart.title = { text: "各月浏览量 (" + data.reduce((acc, x) => acc + x[1], 0).toLocaleString("en-US") + ")" }
             chart.series = [{ type: "area", name: "浏览量", data }]
             Highcharts.chart($("#" + id + " .页面PV .年"), chart)
         })
     }, 9)
+}
+
+function clone(o) {
+    return JSON.parse(JSON.stringify(o))
 }
 
 $plugin({
@@ -786,7 +790,7 @@ $plugin({
 const BARCHART = <path d="M888 792H200V168c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v688c0 4.4 3.6 8 8 8h752c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm-600-80h56c4.4 0 8-3.6 8-8V560c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v144c0 4.4 3.6 8 8 8zm152 0h56c4.4 0 8-3.6 8-8V384c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v320c0 4.4 3.6 8 8 8zm152 0h56c4.4 0 8-3.6 8-8V462c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v242c0 4.4 3.6 8 8 8zm152 0h56c4.4 0 8-3.6 8-8V304c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v400c0 4.4 3.6 8 8 8z"></path>
 const DateFormat = { "小时": "yyyy/MM/dd/HH", "日": "yyyy/MM/dd", "月": "yyyy/MM", "年": "yyyy" }
 const dateTime = { "minute": "%H:%M", "hour": "%H:%M", "day": "%m月%d日" }
-const chartOption = {
+const Option = {
     xAxis: { type: "datetime", dateTimeLabelFormats: dateTime },
     yAxis: { title: "" },
     tooltip: { dateTimeLabelFormats: dateTime },
@@ -800,6 +804,5 @@ const chartOption = {
                 ]
             }
         }
-    },
-    series: []
+    }
 }
