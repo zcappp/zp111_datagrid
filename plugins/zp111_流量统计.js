@@ -12,7 +12,7 @@ const TAB = {
 const TYPES = Object.keys(TAB)
 let exc, rd, id, ymd, type, slot, subtype, date, O, pop
 
-function onInit(ref) {
+function init(ref) {
     exc = ref.exc
     rd = ref.render
     id = ref.id
@@ -783,7 +783,7 @@ function clone(o) {
 $plugin({
     id: "zp111",
     render,
-    onInit,
+    init,
     css
 })
 
