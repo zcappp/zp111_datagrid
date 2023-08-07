@@ -16,8 +16,8 @@ function init(ref) {
     exc = ref.exc
     rd = ref.render
     id = ref.id
-    exc('load("https://code.hcharts.cn/10.3.2/highcharts.js")', null, () => {
-        Highcharts.setOptions({ global: { useUTC: false } })
+    exc('load("https://z.zccdn.cn/vendor/highcharts/highcharts_11.1.js")', null, () => { // https://code.hcharts.cn/
+        Highcharts.setOptions({ global: { useUTC: false }, accessibility: { enabled: false } })
         $("#" + id + " .YMD").children[0].click()
         $("#" + id + " .TYPES").children[1].click()
     })
@@ -789,7 +789,7 @@ $plugin({
 
 const BARCHART = <path d="M888 792H200V168c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v688c0 4.4 3.6 8 8 8h752c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm-600-80h56c4.4 0 8-3.6 8-8V560c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v144c0 4.4 3.6 8 8 8zm152 0h56c4.4 0 8-3.6 8-8V384c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v320c0 4.4 3.6 8 8 8zm152 0h56c4.4 0 8-3.6 8-8V462c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v242c0 4.4 3.6 8 8 8zm152 0h56c4.4 0 8-3.6 8-8V304c0-4.4-3.6-8-8-8h-56c-4.4 0-8 3.6-8 8v400c0 4.4 3.6 8 8 8z"></path>
 const DateFormat = { "小时": "yyyy/MM/dd/HH", "日": "yyyy/MM/dd", "月": "yyyy/MM", "年": "yyyy" }
-const dateTime = { "minute": "%H:%M", "hour": "%H:%M", "day": "%m月%d日" }
+const dateTime = { "minute": "%H:%M", "hour": "%H:%M", "day": "%m-%d" }
 const Option = {
     xAxis: { type: "datetime", dateTimeLabelFormats: dateTime },
     yAxis: { title: "" },
