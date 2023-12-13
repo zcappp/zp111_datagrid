@@ -12,29 +12,26 @@ function ini(ref) {
     let O = {
         licenseKey: 'non-commercial-and-evaluation',
         afterUndoStackChange,
-        minSpareRows: 1,
+        minSpareRows: P.minSpareRows,
         language: 'zh-CN',
         locale: 'zh-CN',
-        contextMenu: true,
         startRows: 2,
         startCols: 9,
+        height: 'auto',
         rowHeaders: true,
         colHeaders: P.colHeaders,
-        customBorders: true,
-        dropdownMenu: P.dropdownMenu,
-        multiColumnSorting: true,
-        filters: true,
-        manualRowMove: true,
-        manualColumnMove: true,
-        bindRowsWithHeaders: true,
-        height: 'auto',
+        columns: P.columns,
+        columnSorting: true,
+        // multiColumnSorting: true,
         manualColumnFreeze: true,
+        manualColumnResize: true,
+        // manualRowMove: true,
+        // manualColumnMove: true,
+        // bindRowsWithHeaders: true,
         readOnly: P.readOnly,
         nestedRows: P.nestedRows,
-        columns: P.columns,
         hiddenColumns: { columns: [], indicators: true },
         colWidths: P.colWidths,
-        manualColumnResize: true,
         // beforeFilter,
         copyPaste: {
             copyColumnHeaders: true,
@@ -47,6 +44,10 @@ function ini(ref) {
     let changes = {}
     let x, k, data, oData
     if (P.fixedColumnsStart) O.fixedColumnsStart = P.fixedColumnsStart
+    if (P.filter) {
+        O.filters = true
+        O.dropdownMenu = ["filter_by_condition", "filter_by_condition2", "filter_operators", "filter_by_value", "filter_action_bar"]
+    }
     if (P.data) {
         if (Array.isArray(P.data)) {
             data = P.data
@@ -65,9 +66,9 @@ function ini(ref) {
     function afterUndoStackChange(actionsBefore, actionsAfter) {
         changes = {}
         actionsAfter.forEach(a => {
-            a.changes.forEach(b => {
+            if (a.changes) a.changes.forEach(b => {
                 k = b[0] + "_" + b[1]
-                changes[k] = { row: b[0], col: b[1], comment: { value: (changes[k] ? changes[k].comment.value : b[2]) + " -> " + b[3] } }
+                changes[k] = { row: b[0], col: b[1], comment: { value: (changes[k] ? changes[k].comment.value : b[2]) + " -> " + b[3], readOnly: true } }
             })
         })
         H.updateSettings({ cell: Object.values(changes) })
@@ -137,9 +138,13 @@ $plugin({
         type: "switch",
         label: "只读"
     }, {
-        prop: "dropdownMenu",
+        prop: "filter",
         type: "switch",
-        label: "下拉菜单"
+        label: "可过滤"
+    }, {
+        prop: "minSpareRows",
+        type: "number",
+        label: "自动传入新行数"
     }, {
         prop: "nestedRows",
         type: "switch",
