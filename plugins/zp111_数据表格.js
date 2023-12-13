@@ -46,6 +46,7 @@ function ini(ref) {
     }
     let changes = {}
     let x, k, data, oData
+    if (P.fixedColumnsStart) O.fixedColumnsStart = P.fixedColumnsStart
     if (P.data) {
         if (Array.isArray(P.data)) {
             data = P.data
@@ -55,10 +56,11 @@ function ini(ref) {
         }
         if (data) O.data = P.readOnly ? data : JSON.parse(JSON.stringify(data))
     }
-    if (P.fixedColumnsStart) O.fixedColumnsStart = P.fixedColumnsStart
+    if (!P.columns && data && ref.isDev) {
+        O.columns = getColumns(data[0])
+        ref.updateMeta("p.P.columns", O.columns)
+    }
     const H = container.hot = new Handsontable(container, O)
-    exc('$v.zp111[ref.id] = v', { ref, v: [1, 2, 3, 4] })
-
 
     function afterUndoStackChange(actionsBefore, actionsAfter) {
         changes = {}
@@ -82,8 +84,8 @@ function ini(ref) {
         H.getData().forEach((d, row) => {
             if (meta[row]) {
                 let o = { $set: {}, $unset: {} }
-                Object.values(meta[row]).forEach((m, col) => {
-                    d[col] === null || d[col] === "" ? o.$unset[m.prop] = "" : o.$set[m.prop] = d[col]
+                Object.values(meta[row]).forEach(m => {
+                    d[m.col] === null || d[m.col] === "" ? o.$unset[m.prop] = "" : o.$set[m.prop] = d[m.col]
                     U[data[row]._id] = o
                 })
             }
@@ -101,8 +103,9 @@ function ini(ref) {
         })
     }
 }
-const css = `
 
+
+const css = `
 .handsontable .htCommentCell:after {
     border-top-color: red !important;
 }
@@ -115,60 +118,6 @@ $plugin({
         type: "text",
         label: "数据集",
         ph: "(用小括号)"
-    }, {
-        prop: "columns",
-        type: "array",
-        label: "列配置",
-        dftExp: '$v.zp111[z]',
-        struct: [{
-            prop: "title",
-            type: "text",
-            label: "表头"
-        }, {
-            prop: "data",
-            type: "text",
-            label: "数据路径"
-        }, {
-            prop: "type",
-            type: "select",
-            label: "数据类型",
-            filter: 1,
-            items: ["text", "numeric", "select", "checkbox", "dropdown", "password", "date", "time", "autocomplete", "handsontable"]
-        }, {
-            prop: "numericFormat.pattern",
-            type: "text",
-            label: "数字格式",
-            ph: "0,0.00",
-            show: 'type == "numeric"'
-        }, {
-            prop: "dateFormat",
-            type: "text",
-            label: "日期格式",
-            ph: "YYYY-MM-DD",
-            show: 'type == "date"'
-        }, {
-            prop: "timeFormat",
-            type: "text",
-            label: "时间格式",
-            ph: "h:mm:ss a",
-            show: 'type == "time"'
-        }, {
-            prop: "source",
-            type: "text",
-            label: "选项",
-            ph: "([])",
-            show: 'type == "dropdown" || type == "autocomplete"'
-        }, {
-            prop: "className",
-            type: "select",
-            filter: 1,
-            label: "单元格类名",
-            items: ["htLeft", "htCenter", "htRight", "htJustify", "htTop", "htMiddle", "htBottom"]
-        }, {
-            prop: "readOnly",
-            type: "switch",
-            label: "只读"
-        }]
     }, {
         prop: "colHeaders",
         type: "text",
@@ -195,6 +144,69 @@ $plugin({
         prop: "nestedRows",
         type: "switch",
         label: "树形数据"
+    }, {
+        prop: "columns",
+        type: "array",
+        label: "列配置",
+        struct: [{
+            prop: "title",
+            type: "text",
+            label: "表头"
+        }, {
+            prop: "data",
+            type: "text",
+            label: "数据路径"
+        }, {
+            prop: "type",
+            type: "select",
+            label: "数据类型",
+            filter: 1,
+            items: ["text", "numeric", "checkbox", "select", "dropdown", "autocomplete", "date", "time", "handsontable"]
+        }, {
+            prop: "numericFormat.pattern",
+            type: "text",
+            label: "数字格式",
+            ph: "0,0.00",
+            show: 'type == "numeric"'
+        }, {
+            prop: "dateFormat",
+            type: "text",
+            label: "日期格式",
+            ph: "YYYY-MM-DD",
+            show: 'type == "date"'
+        }, {
+            prop: "timeFormat",
+            type: "text",
+            label: "时间格式",
+            ph: "h:mm:ss a",
+            show: 'type == "time"'
+        }, {
+            prop: "source",
+            type: "text",
+            label: "选项列表",
+            ph: "([])",
+            show: 'type == "dropdown" || type == "autocomplete"'
+        }, {
+            prop: "selectOptions",
+            type: "text",
+            label: "选项列表",
+            ph: "([])",
+            show: 'type == "select"'
+        }, {
+            prop: "className",
+            type: "select",
+            filter: 1,
+            insertEmpty: 1,
+            filter: 1,
+            allowDIY: 1,
+            label: "单元格类名",
+            items: ["htLeft", "htCenter", "htRight", "htJustify", "htTop", "htMiddle", "htBottom"]
+        }, {
+            prop: "readOnly",
+            type: "switch",
+            label: "只读",
+            show: '!p.P.readOnly'
+        }]
     }, ],
     css,
     init
@@ -209,6 +221,43 @@ function beforeFilter(conditionsStack) {
 function beforeAutofill(selectionData, sourceRange, targetRange, direction) {
     log(selectionData, sourceRange, targetRange, direction)
     // https://handsontable.com/docs/javascript-data-grid/api/hooks/#beforeautofill
+}
+
+function getColumns(d) {
+    let columns = []
+    Object.keys(d).forEach(k => {
+        let v = d[k]
+        if (typeof v == "object") {
+            Array.isArray(v) ? v.forEach((a, i) => recur(columns, a, k + "." + i + ".")) : recur(columns, v, k + ".")
+        } else if (k != "_id") {
+            columns.push(Object.assign({ title: k, data: k }, TYPE[typeof v] || {}))
+        }
+    })
+    if (columns.length > 100) columns = columns.slice(0, 100)
+    return columns
+}
+
+function recur(columns, x, prefix) {
+    if (!x || typeof x !== "object") return
+    Object.keys(x).forEach(k => {
+        const p = prefix + k
+        let o = { title: p, data: p }
+        let v = x[k]
+        if (Array.isArray(v)) {
+            if (v[0] && typeof v[0] === "object" && !Array.isArray(v[0])) return v.forEach((a, i) => recur(columns, a, p + "." + i + "."))
+            columns.push(o)
+        } else if (v && typeof v === "object") {
+            recur(columns, v, p + ".")
+        } else {
+            Object.assign(o, TYPE[typeof v] || {})
+            columns.push(o)
+        }
+    })
+}
+
+const TYPE = {
+    "number": { type: "numeric", className: "htRight" },
+    "boolean": { type: "checkbox", className: "htCenter" },
 }
 
 /*
