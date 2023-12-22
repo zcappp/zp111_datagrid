@@ -12,42 +12,32 @@ function ini(ref) {
     let O = {
         licenseKey: 'non-commercial-and-evaluation',
         afterUndoStackChange,
-        minSpareRows: P.minSpareRows,
         language: 'zh-CN',
         locale: 'zh-CN',
         startRows: 2,
         startCols: 9,
         height: 'auto',
+        search: true,
         rowHeaders: true,
-        colHeaders: P.colHeaders,
+        colHeaders: P.colHeaders, // ?
         columns: P.columns,
-        columnSorting: true,
-        // multiColumnSorting: true,
+        multiColumnSorting: true, // columnSorting: true,
         manualColumnFreeze: true,
         manualColumnResize: true,
-        // manualRowMove: true,
-        // manualColumnMove: true,
-        // bindRowsWithHeaders: true,
         readOnly: P.readOnly,
         nestedRows: P.nestedRows,
         hiddenColumns: { columns: [], indicators: true },
-        colWidths: P.colWidths,
-        // beforeFilter,
         copyPaste: {
             copyColumnHeaders: true,
             copyColumnGroupHeaders: true,
             copyColumnHeadersOnly: true,
         },
-        comments: true,
-        beforeAutofill,
+        comments: true
     }
     let changes = {}
     let x, k, data, oData
-    if (P.fixedColumnsStart) O.fixedColumnsStart = P.fixedColumnsStart
-    if (P.filter) {
-        O.filters = true
-        O.dropdownMenu = ["filter_by_condition", "filter_by_condition2", "filter_operators", "filter_by_value", "filter_action_bar"]
-    }
+    if (P.fixedColumnsStart) O.fixedColumnsStart = parseInt(P.fixedColumnsStart)
+    if (typeof P.minSpareRows == "number") O.minSpareRows = P.minSpareRows
     if (P.data) {
         if (Array.isArray(P.data)) {
             data = P.data
@@ -61,7 +51,43 @@ function ini(ref) {
         O.columns = getColumns(data[0])
         ref.updateMeta("p.P.columns", O.columns)
     }
-    const H = container.hot = new Handsontable(container, O)
+    if (P.filter) {
+        O.filters = true
+        O.dropdownMenu = ["filter_by_condition", "filter_by_condition2", "filter_operators", "filter_by_value", "filter_action_bar"]
+        if (P.serverFilter && oData && O.columns) O.beforeFilter = stack => {
+            let Q = JSON.parse(oData.query)
+            let Opt = JSON.parse(oData.option || {})
+            Opt.skip = 0
+            stack.forEach(o => {
+                const cfg = O.columns[o.column]
+                const field = cfg.data
+                log(field, JSON.stringify(o.conditions))
+                if (o.operation.startsWith("disjunction")) { // conjunction disjunction disjunctionWithExtraCondition
+                    if (o.operation.includes("Extra")) {
+                        let c = o.conditions.pop()
+                        Q[field] = Condition[c.name](c.args, cfg)
+                    }
+                    Q.$or = o.conditions.map(c => {
+                        return {
+                            [field]: Condition[c.name](c.args, cfg)
+                        }
+                    }).concat(Q.$or || [])
+                } else {
+                    Q[field] = Object.assign(...o.conditions.map(c => Condition[c.name](c.args, cfg)))
+                    // Q.$and = o.conditions.map(c => {return {[field]: Condition[c.name](c.args, cfg)}}).concat(JSON.parse(oData.query))
+                    // o.conditions.forEach(c => {
+                    //     Q[field] = Condition[c.name](c.args, cfg)
+                    // })
+                }
+            })
+            exc('$' + oData.model + '.search(path, Q, Opt)', { Q, Opt }, r => {
+                log(r)
+                r && r.all ? H.updateData(P.readOnly ? r.all : JSON.parse(JSON.stringify(r.all))) : exc('warn("出错了")')
+            })
+            return false // to disable filtering on the client side
+        }
+    }
+    const H = container.datagrid = new Handsontable(container, O)
 
     function afterUndoStackChange(actionsBefore, actionsAfter) {
         changes = {}
@@ -73,7 +99,14 @@ function ini(ref) {
         })
         H.updateSettings({ cell: Object.values(changes) })
     }
+    container.getData = () => H.getData()
+    container.updateSettings = () => H.updateSettings()
+    container.render = () => H.render()
     container.export = name => exc('table2Excel(container, name)', { container, name })
+    container.query = txt => {
+        H.getPlugin('search').query(txt)
+        H.render()
+    }
     container.saveToDB = exp => {
         if (!oData) return log("需要把整个搜索返回的结果作为数据集传进来才能保存")
         let meta = {}
@@ -134,6 +167,10 @@ $plugin({
         type: "text",
         label: "固定列"
     }, {
+        prop: "minSpareRows",
+        type: "number",
+        label: "自动添加新行数"
+    }, {
         prop: "readOnly",
         type: "switch",
         label: "只读"
@@ -142,9 +179,10 @@ $plugin({
         type: "switch",
         label: "可过滤"
     }, {
-        prop: "minSpareRows",
-        type: "number",
-        label: "自动传入新行数"
+        prop: "serverFilter",
+        type: "switch",
+        label: "服务器端过滤",
+        show: 'p.P.filter'
     }, {
         prop: "nestedRows",
         type: "switch",
@@ -177,7 +215,7 @@ $plugin({
             prop: "dateFormat",
             type: "text",
             label: "日期格式",
-            ph: "YYYY-MM-DD",
+            ph: "yyyy-MM-dd",
             show: 'type == "date"'
         }, {
             prop: "timeFormat",
@@ -207,6 +245,11 @@ $plugin({
             label: "单元格类名",
             items: ["htLeft", "htCenter", "htRight", "htJustify", "htTop", "htMiddle", "htBottom"]
         }, {
+            prop: "width",
+            type: "number",
+            label: "宽度",
+            ph: "px, 默认自适应"
+        }, {
             prop: "readOnly",
             type: "switch",
             label: "只读",
@@ -217,16 +260,6 @@ $plugin({
     init
 })
 
-
-function beforeFilter(conditionsStack) {
-    log(conditionsStack)
-    return false // return `false` to disable filtering on the client side
-}
-
-function beforeAutofill(selectionData, sourceRange, targetRange, direction) {
-    log(selectionData, sourceRange, targetRange, direction)
-    // https://handsontable.com/docs/javascript-data-grid/api/hooks/#beforeautofill
-}
 
 function getColumns(d) {
     let columns = []
@@ -265,35 +298,66 @@ const TYPE = {
     "boolean": { type: "checkbox", className: "htCenter" },
 }
 
-/*
-hot.getData()
-hot.loadData(newDataset)
-hot.updateData(newDataset)
-hot.updateSettings({ data: newDataset})
-hot.setDataAtCell(0, 1, 'Ford')
-const changes = [
-  [0, 2, 'New Value'],
-  [1, 2, 'Different Value'],
-  [2, 2, 'Third Replaced Value'],
-];
-hot.setDataAtCell(changes)
-hot.setDataAtRowProp(0, 'title', 'New Value');
-const changes = [
-  [0, 'id', '22'],
-  [0, 'firstName', 'John'],
-  [0, 'lastName', 'Doe'],
-];
-hot.setDataAtRowProp(changes);
-hot.setSourceDataAtCell(0, 2, 'New Value');
-hot.setSourceDataAtCell(0, 'title', 'New Value');
-const changes = [
-  [0, 'id', '22'],
-  [0, 'firstName', 'John'],
-  [0, 'lastName', 'Doe'],
-];
-hot.setSourceDataAtCell(changes)
+const Condition = {
+    none: "",
+    by_value: args => {
+        return { $in: args[0] }
+    },
+    empty: args => {
+        return { $eq: "" }
+    },
+    not_empty: args => {
+        return { $ne: "" }
+    },
+    eq: args => {
+        return { $eq: args[0] }
+    },
+    neq: args => {
+        return { $ne: args[0] }
+    },
+    contains: args => {
+        return { $regex: args[0], $options: "i" }
+    },
+    not_contains: args => {
+        return { $nin: args }
+    },
+    begins_with: args => {
+        return { $regex: "^" + args[0], $options: "i" }
+    },
+    ends_with: args => {
+        return { $regex: args[0] + "$", $options: "i" }
+    },
+    gt: args => {
+        return { $gt: parseFloat(args[0]) }
+    },
+    gte: args => {
+        return { $gte: parseFloat(args[0]) }
+    },
+    lt: args => {
+        return { $lt: parseFloat(args[0]) }
+    },
+    lte: args => {
+        return { lte: parseFloat(args[0]) }
+    },
+    between: args => {
+        return { $gte: parseFloat(args[0]), $lte: parseFloat(args[1]) }
+    },
+    not_between: args => {
+        return { $or: [{ $lt: parseFloat(args[0]), $gt: parseFloat(args[1]) }] }
+    },
+    date_after: "",
+    date_before: "",
+    date_today: (args, cfg) => {
+        return { $eq: new Date().format(cfg.dateFormat) }
+    },
+    date_tomorrow: "",
+    date_yesterday: "",
+}
 
-hot.getCellMeta(0, 0)
+/*
+自定义单元格、按钮
+搜索框 指定搜索哪些列
+级联过滤
 
 https://handsontable.com/docs/javascript-data-grid/column-groups/
 nestedHeaders: [
